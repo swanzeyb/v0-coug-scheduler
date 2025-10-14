@@ -14,6 +14,8 @@ import {
   BarChart3,
   AlertCircle,
   Plus,
+  Grid3X3,
+  List,
 } from 'lucide-react'
 
 // Import Zod types and persistence hooks
@@ -128,6 +130,7 @@ export default function ScheduleApp() {
   const [editingTask, setEditingTask] = useState<ScheduleItem | null>(null)
   const [showTaskEditor, setShowTaskEditor] = useState(false)
   const [isAiThinking, setIsAiThinking] = useState(false)
+  const [viewMode, setViewMode] = useState<'cards' | 'todo'>('cards')
   const [taskForm, setTaskForm] = useState<TaskForm>({
     name: '',
     startTime: '',
@@ -819,57 +822,138 @@ export default function ScheduleApp() {
       </Card>
 
       <div className="mb-20">
-        <h2 className="text-lg font-semibold text-foreground mb-3">
-          {DAYS[selectedDay]}&apos;s Schedule
-        </h2>
-        <div className="space-y-3">
-          {currentScheduleItems.map((item) => (
-            <Card
-              key={item.id}
-              className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => handleTaskClick(item)}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-foreground">
+            {DAYS[selectedDay]}&apos;s Schedule
+          </h2>
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 w-8 p-0"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  <button
-                    className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${
-                      item.completed
-                        ? 'bg-primary border-primary'
-                        : 'border-muted-foreground hover:border-primary'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleTaskCompletion(item.id, DAYS[selectedDay])
-                    }}
-                  />
-                  <div className="flex-1">
-                    <h3
-                      className={`font-medium ${
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'todo' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('todo')}
+              className="h-8 w-8 p-0"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        {viewMode === 'cards' ? (
+          // Card View (original layout)
+          <div className="space-y-3">
+            {currentScheduleItems.map((item) => (
+              <Card
+                key={item.id}
+                className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleTaskClick(item)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <button
+                      className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${
                         item.completed
-                          ? 'line-through text-muted-foreground'
-                          : 'text-foreground'
+                          ? 'bg-primary border-primary'
+                          : 'border-muted-foreground hover:border-primary'
                       }`}
-                    >
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{item.time}</p>
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleTaskCompletion(item.id, DAYS[selectedDay])
+                      }}
+                    />
+                    <div className="flex-1">
+                      <h3
+                        className={`font-medium ${
+                          item.completed
+                            ? 'line-through text-muted-foreground'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {item.time}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getPriorityIcon(item.priority)}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {getPriorityIcon(item.priority)}
+              </Card>
+            ))}
+
+            {currentScheduleItems.length === 0 && (
+              <Card className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  No scheduled items for this day
+                </p>
+              </Card>
+            )}
+          </div>
+        ) : (
+          // TODO List View (compact line-item style)
+          <div className="space-y-2">
+            {currentScheduleItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer border border-transparent hover:border-border/50"
+                onClick={() => handleTaskClick(item)}
+              >
+                <button
+                  className={`w-4 h-4 rounded border-2 transition-all hover:scale-110 flex items-center justify-center ${
+                    item.completed
+                      ? 'bg-primary border-primary text-primary-foreground'
+                      : 'border-muted-foreground hover:border-primary'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleTaskCompletion(item.id, DAYS[selectedDay])
+                  }}
+                >
+                  {item.completed && (
+                    <svg
+                      className="w-2.5 h-2.5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <span
+                    className={`font-medium truncate ${
+                      item.completed
+                        ? 'line-through text-muted-foreground'
+                        : 'text-foreground'
+                    }`}
+                  >
+                    {item.title}
+                  </span>
                 </div>
               </div>
-            </Card>
-          ))}
+            ))}
 
-          {currentScheduleItems.length === 0 && (
-            <Card className="p-6 text-center">
-              <p className="text-muted-foreground">
-                No scheduled items for this day
-              </p>
-            </Card>
-          )}
-        </div>
+            {currentScheduleItems.length === 0 && (
+              <div className="p-6 text-center rounded-lg border border-dashed border-border/50">
+                <p className="text-muted-foreground">
+                  No scheduled items for this day
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border/50 p-4">
