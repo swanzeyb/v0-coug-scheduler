@@ -378,14 +378,25 @@ export function processUserPreferences(
   throw new Error(`Invalid user preferences: ${validation.errors.join(', ')}`)
 }
 
+// Utility function to convert 24-hour format to 12-hour format with AM/PM
+export function formatTime24To12(time24: string): string {
+  const [hours, minutes] = time24.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 export function createNewTask(
   taskForm: TaskForm,
   nextTaskId: number
 ): ScheduleItem {
+  const startTime12 = formatTime24To12(taskForm.startTime)
+  const endTime12 = formatTime24To12(taskForm.endTime)
+
   return {
     id: nextTaskId,
     title: taskForm.name,
-    time: `${taskForm.startTime} - ${taskForm.endTime}`,
+    time: `${startTime12} - ${endTime12}`,
     priority: taskForm.priority,
     completed: false,
   }

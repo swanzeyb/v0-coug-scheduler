@@ -24,7 +24,7 @@ import {
   useChatState,
   useNavigationState,
 } from '@/lib/persistence-hooks'
-import { processUserPreferences } from '@/lib/schemas'
+import { processUserPreferences, formatTime24To12 } from '@/lib/schemas'
 import { sendChatToWebhook } from '@/lib/webhook-service'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -305,6 +305,9 @@ export default function ScheduleApp() {
 
     if (editingTask) {
       // Update existing task
+      const startTime12 = formatTime24To12(taskForm.startTime)
+      const endTime12 = formatTime24To12(taskForm.endTime)
+
       updateScheduleItems((items) => ({
         ...items,
         [dayKey]:
@@ -313,7 +316,7 @@ export default function ScheduleApp() {
               ? {
                   ...task,
                   title: taskForm.name,
-                  time: `${taskForm.startTime} - ${taskForm.endTime}`,
+                  time: `${startTime12} - ${endTime12}`,
                   priority: taskForm.priority as 'high' | 'medium' | 'low',
                 }
               : task
@@ -321,10 +324,13 @@ export default function ScheduleApp() {
       }))
     } else {
       // Add new task
+      const startTime12 = formatTime24To12(taskForm.startTime)
+      const endTime12 = formatTime24To12(taskForm.endTime)
+
       const newTask: ScheduleItem = {
         id: nextTaskId,
         title: taskForm.name,
-        time: `${taskForm.startTime} - ${taskForm.endTime}`,
+        time: `${startTime12} - ${endTime12}`,
         priority: taskForm.priority as 'high' | 'medium' | 'low',
         completed: false,
       }

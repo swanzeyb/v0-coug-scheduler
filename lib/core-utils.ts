@@ -21,6 +21,7 @@ export {
   createChatMessage,
   validateMessage,
   validateUserPreferences,
+  formatTime24To12,
 } from './schemas'
 
 // Legacy function for backward compatibility with tests
