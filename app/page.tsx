@@ -219,8 +219,9 @@ export default function ScheduleApp() {
   function handleSurveyAnswer(answer: string | number[]) {
     const currentQuestion = SURVEY_QUESTIONS[currentQuestionIndex]
 
-    // Check if this question requires follow-up
+    // Check if this question requires follow-up (only if not already showing follow-up)
     if (
+      !showFollowUp &&
       currentQuestion.type === 'multiple-choice' &&
       currentQuestion.requiresFollowUp
     ) {
@@ -609,8 +610,8 @@ export default function ScheduleApp() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setShowFollowUp(false)
-                      setFollowUpText('')
+                      // Skip - submit the answer without notes
+                      handleSurveyAnswer(pendingAnswer)
                     }}
                     className="flex-1"
                   >
