@@ -84,22 +84,9 @@ const SURVEY_QUESTIONS = [
     ],
     requiresFollowUp: [0, 1, 2], // Indices that require follow-up
   },
+
   {
     id: 4,
-    question: 'What is your preferred planner view?',
-    type: 'multiple-choice' as const,
-    options: [
-      'Daily to-do list',
-      'Weekly to-do list',
-      'Bulleted monthly overview',
-      'Daily schedule',
-      'Weekly schedule',
-      'Monthly calendar',
-    ],
-    showPreview: true,
-  },
-  {
-    id: 5,
     question: 'How do you prefer to break down large tasks?',
     type: 'multiple-choice' as const,
     options: [
@@ -110,7 +97,7 @@ const SURVEY_QUESTIONS = [
     ],
   },
   {
-    id: 6,
+    id: 5,
     question: 'Are your current study habits working for you?',
     type: 'multiple-choice' as const,
     options: [
@@ -122,7 +109,7 @@ const SURVEY_QUESTIONS = [
     requiresFollowUp: [0, 1, 2], // Indices that require follow-up
   },
   {
-    id: 7,
+    id: 6,
     question: 'What type of reminders work best for you?',
     type: 'multiple-choice' as const,
     options: [

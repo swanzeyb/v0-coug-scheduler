@@ -60,91 +60,6 @@ function migrateToV1_0_0(data: unknown): Record<string, unknown> {
   }
 }
 
-// Survey questions for onboarding
-export const SURVEY_QUESTIONS = [
-  {
-    id: 1,
-    question: 'What are your most productive study hours?',
-    type: 'slider' as const,
-    min: 6, // 6am
-    max: 24, // 12am (midnight)
-    step: 1,
-    defaultValue: [9, 17], // 9am to 5pm
-    labels: ['6am', '9am', '12pm', '3pm', '6pm', '9pm', '12am'],
-  },
-  {
-    id: 2,
-    question: 'When do you prefer to be asleep?',
-    type: 'slider' as const,
-    min: 0, // 9pm (represented as 0 for slider)
-    max: 12, // 9am (represented as 12 for slider, actual hours: 9pm-9am)
-    step: 1,
-    defaultValue: [2, 10], // 11pm to 7am (2 hours after 9pm, 10 hours after 9pm)
-    labels: ['9pm', '12am', '3am', '6am', '9am'],
-    validation: 'min-7-hours' as const,
-  },
-  {
-    id: 3,
-    question: 'Is your current sleep schedule working for you?',
-    type: 'multiple-choice' as const,
-    options: [
-      'No, I need to develop a new sleep routine',
-      'Somewhat, but I need to adjust it for college',
-      'Yes, but it can be improved',
-      'Yes, it needs no improvements',
-    ],
-    requiresFollowUp: [0, 1, 2], // Indices that require follow-up
-  },
-  {
-    id: 4,
-    question: 'What is your preferred planner view?',
-    type: 'multiple-choice' as const,
-    options: [
-      'Daily to-do list',
-      'Weekly to-do list',
-      'Bulleted monthly overview',
-      'Daily schedule',
-      'Weekly schedule',
-      'Monthly calendar',
-    ],
-    showPreview: true,
-  },
-  {
-    id: 5,
-    question: 'How do you prefer to break down large tasks?',
-    type: 'multiple-choice' as const,
-    options: [
-      'Keep tasks whole',
-      'Break into study chunks >1hr',
-      'Break into study chunks <1hr',
-      'Let AI decide',
-    ],
-  },
-  {
-    id: 6,
-    question: 'Are your current study habits working for you?',
-    type: 'multiple-choice' as const,
-    options: [
-      'No, I need to develop a new routine',
-      'Somewhat, but I need to adjust them for college',
-      'Yes, but they can be improved',
-      'Yes, they need no improvements',
-    ],
-    requiresFollowUp: [0, 1, 2], // Indices that require follow-up
-  },
-  {
-    id: 7,
-    question: 'What type of reminders work best for you?',
-    type: 'multiple-choice' as const,
-    options: [
-      'Visual notifications',
-      'Sound alerts',
-      'Email summaries',
-      'No notifications',
-    ],
-  },
-]
-
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
 
 // Basic enums and constants
@@ -405,18 +320,18 @@ export function processUserPreferences(
   }
 
   const sleepSchedule = parseAnswer(surveyAnswers[2])
-  const studyHabits = parseAnswer(surveyAnswers[5])
+  const studyHabits = parseAnswer(surveyAnswers[4]) // Updated index from 5 to 4
 
   const preferences = {
     productiveHours: surveyAnswers[0], // "9:00-17:00"
     sleepHours: surveyAnswers[1], // "23:00-7:00"
     sleepScheduleWorking: sleepSchedule.value,
     sleepScheduleNotes: sleepSchedule.notes,
-    plannerView: surveyAnswers[3],
-    taskBreakdown: surveyAnswers[4],
+    plannerView: 'Daily schedule', // Default value since we removed this question
+    taskBreakdown: surveyAnswers[3], // Updated index from 4 to 3
     studyHabitsWorking: studyHabits.value,
     studyHabitsNotes: studyHabits.notes,
-    reminderType: surveyAnswers[6],
+    reminderType: surveyAnswers[5], // Updated index from 6 to 5
   }
 
   const validation = validateUserPreferences(preferences)
