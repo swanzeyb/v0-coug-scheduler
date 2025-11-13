@@ -254,6 +254,8 @@ export default function ScheduleApp() {
       try {
         const preferences = processUserPreferences(newAnswers)
         completeSurvey(preferences)
+        // Immediately show chat window after survey completion
+        setCurrentView('chat')
       } catch (error) {
         console.error('Invalid survey answers:', error)
         // Handle validation error gracefully
