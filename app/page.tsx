@@ -143,8 +143,6 @@ export default function ScheduleApp() {
   const { scheduleItems, nextTaskId, updateScheduleItems, incrementTaskId } =
     useScheduleState()
 
-  const { messages, isLoading, error, sendMessage } = useAIChat()
-
   const {
     currentDate,
     selectedDay,
@@ -153,6 +151,11 @@ export default function ScheduleApp() {
     setSelectedDay,
     setCurrentView,
   } = useNavigationState()
+
+  // Track chat session - changes each time chat opens to start fresh
+  const [chatSessionKey, setChatSessionKey] = useState<number>(0)
+
+  const { messages, isLoading, error, sendMessage } = useAIChat(chatSessionKey)
 
   // Ensure currentDate is always a Date object
   const currentDateObj =
@@ -252,6 +255,8 @@ export default function ScheduleApp() {
       try {
         const preferences = processUserPreferences(newAnswers)
         completeSurvey(preferences)
+        // Start a new chat session when survey completes
+        setChatSessionKey((prev) => prev + 1)
         // Immediately show chat window after survey completion
         setCurrentView('chat')
       } catch (error) {
@@ -288,6 +293,8 @@ export default function ScheduleApp() {
   }
 
   function handleCougarClick() {
+    // Start a new chat session each time the cougar is clicked
+    setChatSessionKey((prev) => prev + 1)
     setCurrentView('chat')
   }
 
