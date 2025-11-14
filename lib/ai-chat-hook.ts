@@ -10,14 +10,9 @@ export function useAIChat() {
     id: 'butch-chat-session',
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      prepareSendMessagesRequest: ({ messages }) => {
-        return {
-          body: {
-            messages,
-            userPreferences,
-            schedule: scheduleItems,
-          },
-        }
+      body: {
+        userPreferences,
+        schedule: scheduleItems,
       },
     }),
   })
