@@ -32,6 +32,10 @@ import {
   convertTo24Hour,
 } from '@/lib/schemas'
 import { useAIChat } from '@/lib/ai-chat-hook'
+import {
+  transformAIScheduleToItems,
+  mergeScheduleForWeek,
+} from '@/lib/schedule-transformer'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const MONTHS = [
@@ -166,6 +170,7 @@ export default function ScheduleApp() {
   const [editingTask, setEditingTask] = useState<ScheduleItem | null>(null)
   const [showTaskEditor, setShowTaskEditor] = useState(false)
   const [viewMode, setViewMode] = useState<'cards' | 'todo'>('cards')
+  const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false)
   const [taskForm, setTaskForm] = useState<TaskForm>({
     name: '',
     startTime: '',
@@ -298,7 +303,55 @@ export default function ScheduleApp() {
     setCurrentView('chat')
   }
 
-  function handleBackToMain() {
+  async function handleBackToMain() {
+    // Only generate schedule if there's a meaningful conversation (more than just the opening message)
+    if (messages.length > 1) {
+      setIsGeneratingSchedule(true)
+      try {
+        // Call the generate-schedule endpoint
+        const response = await fetch('/api/generate-schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages }),
+        })
+
+        const data = await response.json()
+
+        if (data.success && data.schedule) {
+          // Get current week dates
+          const weekDates = getWeekDates(currentDateObj)
+
+          // Transform AI schedule to ScheduleItems format
+          const transformedSchedule = transformAIScheduleToItems(
+            data.schedule,
+            weekDates,
+            nextTaskId
+          )
+
+          // Merge with existing schedule (replaces current week)
+          const mergedSchedule = mergeScheduleForWeek(
+            scheduleItems,
+            transformedSchedule,
+            weekDates
+          )
+
+          // Update the schedule state
+          updateScheduleItems(() => mergedSchedule)
+
+          // Update next task ID
+          const totalNewTasks = Object.values(transformedSchedule).flat().length
+          for (let i = 0; i < totalNewTasks; i++) {
+            incrementTaskId()
+          }
+        }
+      } catch (error) {
+        // Fail silently as requested
+        console.error('Failed to generate schedule:', error)
+      } finally {
+        setIsGeneratingSchedule(false)
+      }
+    }
+
     setCurrentView('main')
   }
 
@@ -622,7 +675,24 @@ export default function ScheduleApp() {
 
   if (currentView === 'chat') {
     return (
-      <div className="h-screen bg-background flex flex-col max-w-md mx-auto">
+      <div className="h-screen bg-background flex flex-col max-w-md mx-auto relative">
+        {/* Loading Overlay */}
+        {isGeneratingSchedule && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-card rounded-2xl p-8 shadow-2xl border border-border flex flex-col items-center gap-4">
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="text-center">
+                <h3 className="font-semibold text-lg text-foreground mb-1">
+                  Generating Your Schedule
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Analyzing your conversation with Butch...
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-muted/40 to-muted/20 border-b border-border/50 flex-shrink-0">
           <Button
             variant="ghost"

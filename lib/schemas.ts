@@ -421,3 +421,48 @@ export function createChatMessage(
 
   throw new Error(`Invalid message: ${validation.errors.join(', ')}`)
 }
+
+// AI-generated schedule schemas
+export const AIScheduleBlockSchema = z.object({
+  start_time: z.string().regex(/^\d{2}:\d{2}$/), // "09:00"
+  end_time: z.string().regex(/^\d{2}:\d{2}$/), // "10:20"
+  type: z.enum([
+    'class',
+    'study',
+    'work',
+    'athletic',
+    'extracurricular',
+    'personal',
+  ]),
+  title: z.string(),
+  location: z.string().optional(),
+  credits: z.number().optional(),
+})
+
+export const AIDayScheduleSchema = z.object({
+  day: z.string(),
+  blocks: z.array(AIScheduleBlockSchema),
+})
+
+export const AIScheduleSummarySchema = z.object({
+  total_credits: z.number(),
+  study_hours: z.number(),
+  class_hours: z.number(),
+  work_hours: z.number(),
+  other_hours: z.number(),
+  total_committed: z.number(),
+  available_hours: z.number(),
+  buffer_hours: z.number(),
+})
+
+export const AIGeneratedScheduleSchema = z.object({
+  schedule_summary: AIScheduleSummarySchema,
+  weekly_schedule: z.array(AIDayScheduleSchema),
+  notes: z.array(z.string()),
+})
+
+// Type exports for AI schedule
+export type AIScheduleBlock = z.infer<typeof AIScheduleBlockSchema>
+export type AIDaySchedule = z.infer<typeof AIDayScheduleSchema>
+export type AIScheduleSummary = z.infer<typeof AIScheduleSummarySchema>
+export type AIGeneratedSchedule = z.infer<typeof AIGeneratedScheduleSchema>
