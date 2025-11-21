@@ -6,6 +6,15 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
@@ -14,6 +23,7 @@ import {
   Plus,
   Grid3X3,
   List,
+  RotateCcw,
 } from 'lucide-react'
 
 // Import Zod types and persistence hooks
@@ -35,6 +45,7 @@ import {
   transformAIScheduleToItems,
   mergeScheduleForWeek,
 } from '@/lib/schedule-transformer'
+import { clearAllStorage } from '@/lib/storage-utils'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const MONTHS = [
@@ -195,6 +206,7 @@ export default function ScheduleApp() {
   const [followUpText, setFollowUpText] = useState('')
   const [showFollowUp, setShowFollowUp] = useState(false)
   const [pendingAnswer, setPendingAnswer] = useState<string>('')
+  const [showResetDialog, setShowResetDialog] = useState(false)
 
   // Chat auto-scroll functionality
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -554,6 +566,13 @@ export default function ScheduleApp() {
       dueDate: '',
       priority: 'medium',
     })
+  }
+
+  function handleReset() {
+    // Clear all localStorage data
+    clearAllStorage()
+    // Reload the page to reinitialize all states
+    window.location.reload()
   }
 
   // Filter tasks to only show those that match the current week's dates
@@ -1087,6 +1106,37 @@ export default function ScheduleApp() {
             {MONTHS[currentDateObj.getMonth()]} {currentDateObj.getFullYear()}
           </p>
         </div>
+        <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset All Data</DialogTitle>
+              <DialogDescription>
+                This will permanently delete all your schedule data,
+                preferences, and chat history. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowResetDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleReset}>
+                Reset All Data
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Calendar */}

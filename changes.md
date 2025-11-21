@@ -19,3 +19,4 @@ Needed:
   - ~~Options:
     - ~~Yes - no improvements needed
       ~~Needs no improvements~~
+- ~~Start over button
