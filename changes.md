@@ -4,7 +4,7 @@ Needed:
 - ~~Put the tasks in
 - ~~Hard to find back arrow
 - ~~When messages stream in, the chat needs to scroll to the bottom
-- Should tell the user they're done
+- ~~Should tell the user they're done
 - Switch to different prompt after onboarding
 - Persistent history
 - Can make a task that starts before it ends
