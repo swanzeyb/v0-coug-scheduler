@@ -35,6 +35,7 @@ const DEFAULT_SCHEDULE_STATE: ScheduleState = {
 const DEFAULT_CHAT_STATE: ChatState = {
   version: '1.0.0',
   messages: DEFAULT_MESSAGES,
+  onboardingCompleted: false,
 }
 
 /**
@@ -86,6 +87,22 @@ export function useSurveyState() {
     [setSurveyState]
   )
 
+  const goBackInSurvey = useCallback(() => {
+    setSurveyState((prev) => {
+      if (prev.currentQuestionIndex > 0) {
+        // Remove the last answer and go back one question
+        const newAnswers = [...prev.surveyAnswers]
+        newAnswers.pop()
+        return {
+          ...prev,
+          surveyAnswers: newAnswers,
+          currentQuestionIndex: prev.currentQuestionIndex - 1,
+        }
+      }
+      return prev
+    })
+  }, [setSurveyState])
+
   const completeSurvey = useCallback(
     (preferences: UserPreferences) => {
       setSurveyState((prev) => ({
@@ -105,6 +122,7 @@ export function useSurveyState() {
     ...surveyState,
     setSurveyState,
     updateSurveyAnswer,
+    goBackInSurvey,
     completeSurvey,
     resetSurvey,
   }
@@ -193,6 +211,16 @@ export function useChatState() {
     [setChatState]
   )
 
+  const setOnboardingCompleted = useCallback(
+    (completed: boolean) => {
+      setChatState((prev) => ({
+        ...prev,
+        onboardingCompleted: completed,
+      }))
+    },
+    [setChatState]
+  )
+
   return {
     ...chatState,
     setChatState,
@@ -200,6 +228,7 @@ export function useChatState() {
     addMessages,
     clearMessages,
     setMessages,
+    setOnboardingCompleted,
   }
 }
 

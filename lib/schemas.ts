@@ -196,6 +196,7 @@ export const ScheduleStateSchema = z.object({
 export const ChatStateSchema = z.object({
   version: z.string(),
   messages: z.array(MessageSchema),
+  onboardingCompleted: z.boolean().default(false),
 })
 
 export const NavigationStateSchema = z.object({
@@ -227,7 +228,7 @@ export type View = z.infer<typeof ViewSchema>
 export const DEFAULT_MESSAGES: Message[] = [
   {
     id: new Date().getMilliseconds(),
-    text: "Go Cougs! I'm Butch, your WSU study companion! Ready to optimize your schedule and achieve your goals? Let me know how I can help!",
+    text: "Hey there! I'm Fred, your friendly scheduling buddy! Ready to optimize your schedule and achieve your goals? Let me know how I can help!",
     sender: 'ai',
     timestamp: new Date(),
   },

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,9 +10,6 @@ import {
   ChevronRight,
   ArrowLeft,
   Send,
-  Settings,
-  Share,
-  BarChart3,
   AlertCircle,
   Plus,
   Grid3X3,
@@ -25,11 +22,13 @@ import {
   useSurveyState,
   useScheduleState,
   useNavigationState,
+  useChatState,
 } from '@/lib/persistence-hooks'
 import {
   processUserPreferences,
   formatTime24To12,
   convertTo24Hour,
+  validateTaskForm,
 } from '@/lib/schemas'
 import { useAIChat } from '@/lib/ai-chat-hook'
 import {
@@ -80,10 +79,10 @@ const SURVEY_QUESTIONS = [
     question: 'Is your current sleep schedule working for you?',
     type: 'multiple-choice' as const,
     options: [
-      'No, I need to develop a new sleep routine',
-      'Somewhat, but I need to adjust it for college',
-      'Yes, but it can be improved',
-      'Yes, it needs no improvements',
+      'I need to develop a new sleep routine',
+      'I need to adjust it for college',
+      'It can be improved',
+      'No improvements needed',
     ],
     requiresFollowUp: [0, 1, 2], // Indices that require follow-up
   },
@@ -124,12 +123,12 @@ const SURVEY_QUESTIONS = [
   },
 ]
 
-const WSU_COUGAR_AI = {
+const SCHEDULING_AI = {
   id: 1,
-  name: 'Butch the Cougar',
-  color: 'bg-red-700',
-  description: 'Your WSU study companion',
-  emoji: '🐾',
+  name: 'Fred the lion',
+  color: 'bg-orange-600',
+  description: 'Your friendly scheduling buddy',
+  emoji: '🦁',
 }
 
 export default function ScheduleApp() {
@@ -139,13 +138,19 @@ export default function ScheduleApp() {
     currentQuestionIndex,
     surveyAnswers,
     userPreferences,
-    setSurveyState,
     updateSurveyAnswer,
+    goBackInSurvey,
     completeSurvey,
   } = useSurveyState()
 
   const { scheduleItems, nextTaskId, updateScheduleItems, incrementTaskId } =
     useScheduleState()
+
+  const {
+    messages: chatMessages,
+    onboardingCompleted,
+    setOnboardingCompleted,
+  } = useChatState()
 
   const {
     currentDate,
@@ -159,7 +164,10 @@ export default function ScheduleApp() {
   // Track chat session - changes each time chat opens to start fresh
   const [chatSessionKey, setChatSessionKey] = useState<number>(0)
 
-  const { messages, isLoading, error, sendMessage } = useAIChat(chatSessionKey)
+  const { messages, isLoading, error, sendMessage } = useAIChat(
+    chatSessionKey,
+    onboardingCompleted
+  )
 
   // Ensure currentDate is always a Date object
   const currentDateObj =
@@ -178,6 +186,8 @@ export default function ScheduleApp() {
     dueDate: '',
     priority: 'medium',
   })
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [taskFormErrors, setTaskFormErrors] = useState<string[]>([])
 
   // Survey-specific UI state
   const [sliderValue1, setSliderValue1] = useState<number[]>([9, 17])
@@ -186,16 +196,17 @@ export default function ScheduleApp() {
   const [showFollowUp, setShowFollowUp] = useState(false)
   const [pendingAnswer, setPendingAnswer] = useState<string>('')
 
-  function calculateSuccessPercentage() {
-    const allTasks = Object.values(scheduleItems).flat()
-    const completedTasks = allTasks.filter((task) => task.completed)
-    const totalTasks = allTasks
+  // Chat auto-scroll functionality
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-    if (totalTasks.length === 0) return 0
-    return Math.round((completedTasks.length / totalTasks.length) * 100)
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const successPercentage = calculateSuccessPercentage()
+  // Auto-scroll when messages change or loading state changes
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, isLoading])
 
   // Helper to convert slider value to hour string
   function sliderToHourString(value: number, questionId: number): string {
@@ -297,8 +308,8 @@ export default function ScheduleApp() {
     setCurrentDate(newDate)
   }
 
-  function handleCougarClick() {
-    // Start a new chat session each time the cougar is clicked
+  function handleFredClick() {
+    // Start a new chat session each time Fred is clicked
     setChatSessionKey((prev) => prev + 1)
     setCurrentView('chat')
   }
@@ -306,8 +317,18 @@ export default function ScheduleApp() {
   async function handleBackToMain() {
     // Only generate schedule if there's a meaningful conversation (more than just the opening message)
     if (messages.length > 1) {
+      console.time('frontend-schedule-generation')
+      console.log(
+        '🎯 Frontend: Starting schedule generation with',
+        messages.length,
+        'messages'
+      )
+
       setIsGeneratingSchedule(true)
       try {
+        console.time('fetch-api-call')
+        console.log('📡 Frontend: Making API call to /api/generate-schedule')
+
         // Call the generate-schedule endpoint
         const response = await fetch('/api/generate-schedule', {
           method: 'POST',
@@ -315,9 +336,18 @@ export default function ScheduleApp() {
           body: JSON.stringify({ messages }),
         })
 
+        console.timeEnd('fetch-api-call')
+        console.log('📡 Frontend: API call completed, status:', response.status)
+
+        console.time('response-parsing')
         const data = await response.json()
+        console.timeEnd('response-parsing')
+
+        console.log('📦 Frontend: Response data success:', data.success)
 
         if (data.success && data.schedule) {
+          console.time('schedule-processing')
+
           // Get current week dates
           const weekDates = getWeekDates(currentDateObj)
 
@@ -343,12 +373,22 @@ export default function ScheduleApp() {
           for (let i = 0; i < totalNewTasks; i++) {
             incrementTaskId()
           }
+
+          console.timeEnd('schedule-processing')
+          console.log('✅ Frontend: Schedule processing completed')
+
+          // Mark onboarding as completed after first schedule generation
+          if (!onboardingCompleted) {
+            setOnboardingCompleted(true)
+          }
         }
       } catch (error) {
         // Fail silently as requested
-        console.error('Failed to generate schedule:', error)
+        console.error('❌ Frontend: Failed to generate schedule:', error)
       } finally {
         setIsGeneratingSchedule(false)
+        console.timeEnd('frontend-schedule-generation')
+        console.log('🏁 Frontend: Schedule generation process finished')
       }
     }
 
@@ -370,12 +410,6 @@ export default function ScheduleApp() {
       e.preventDefault()
       handleSendMessage()
     }
-  }
-
-  function getSuccessColor(percentage: number) {
-    if (percentage >= 80) return 'text-green-500'
-    if (percentage >= 60) return 'text-yellow-500'
-    return 'text-red-500'
   }
 
   function getPriorityIcon(priority: string) {
@@ -410,6 +444,7 @@ export default function ScheduleApp() {
 
   function handleTaskClick(task: ScheduleItem) {
     setEditingTask(task)
+    setTaskFormErrors([]) // Clear any previous errors
 
     // Parse time if it exists
     let startTime = ''
@@ -434,6 +469,16 @@ export default function ScheduleApp() {
   }
 
   function handleSaveTask() {
+    // Validate the task form first
+    const validation = validateTaskForm(taskForm)
+    if (!validation.success) {
+      setTaskFormErrors(validation.errors)
+      return // Don't save if there are validation errors
+    }
+
+    // Clear any previous errors
+    setTaskFormErrors([])
+
     const dayKey = DAYS[selectedDay]
     const hasTimeRange = taskForm.startTime && taskForm.endTime
 
@@ -501,6 +546,7 @@ export default function ScheduleApp() {
 
     setShowTaskEditor(false)
     setEditingTask(null)
+    setTaskFormErrors([])
     setTaskForm({
       name: '',
       startTime: '',
@@ -531,7 +577,19 @@ export default function ScheduleApp() {
 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8 text-center">
+        <Card className="w-full max-w-md p-8 text-center relative">
+          {/* Back arrow - only show if not on first question */}
+          {currentQuestionIndex > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={goBackInSurvey}
+              className="absolute top-4 left-4 h-8 w-8 p-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+
           <div className="mb-6">
             <div className="w-16 h-16 bg-red-700 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
               <Image
@@ -686,7 +744,7 @@ export default function ScheduleApp() {
                   Generating Your Schedule
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Analyzing your conversation with Butch...
+                  Analyzing your conversation with Fred...
                 </p>
               </div>
             </div>
@@ -714,10 +772,10 @@ export default function ScheduleApp() {
             </div>
             <div>
               <h1 className="font-semibold text-foreground">
-                {WSU_COUGAR_AI.name}
+                {SCHEDULING_AI.name}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {WSU_COUGAR_AI.description}
+                {SCHEDULING_AI.description}
               </p>
             </div>
           </div>
@@ -728,11 +786,13 @@ export default function ScheduleApp() {
             <div
               key={message.id}
               className={`flex ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
+                (message.role as string) === 'user'
+                  ? 'justify-end'
+                  : 'justify-start'
               }`}
             >
               <div className="flex items-start gap-3 max-w-[80%]">
-                {message.role === 'assistant' && (
+                {(message.role as string) === 'assistant' && (
                   <div className="w-8 h-8 rounded-full bg-red-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     <Image
                       src="/images/butch-cougar.png"
@@ -745,21 +805,22 @@ export default function ScheduleApp() {
                 )}
                 <div
                   className={`rounded-2xl px-4 py-3 ${
-                    message.role === 'user'
+                    (message.role as string) === 'user'
                       ? 'bg-primary text-primary-foreground ml-auto'
                       : 'bg-muted text-foreground'
                   }`}
                 >
                   <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.parts?.map((part, index) => {
-                      if (part.type === 'text') {
-                        return <span key={index}>{part.text}</span>
-                      }
-                      return null
-                    })}
+                    {(message as { content?: string }).content ||
+                      message.parts?.map((part, index) => {
+                        if (part.type === 'text') {
+                          return <span key={index}>{part.text}</span>
+                        }
+                        return null
+                      })}
                   </div>
                 </div>
-                {message.role === 'user' && (
+                {(message.role as string) === 'user' && (
                   <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-medium">You</span>
                   </div>
@@ -808,6 +869,7 @@ export default function ScheduleApp() {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="p-4 border-t border-border/50 bg-background flex-shrink-0">
@@ -859,6 +921,25 @@ export default function ScheduleApp() {
         </div>
 
         <div className="space-y-6">
+          {/* Display validation errors */}
+          {taskFormErrors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="flex items-start">
+                <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
+                <div className="text-sm text-red-700">
+                  <p className="font-medium mb-1">
+                    Please fix the following errors:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {taskFormErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
               Task Name
@@ -967,45 +1048,12 @@ export default function ScheduleApp() {
   return (
     <div className="min-h-screen bg-background p-4 max-w-md mx-auto">
       <div className="bg-gradient-to-r from-muted/40 to-muted/20 rounded-3xl p-6 mb-6 border border-border/50 shadow-lg relative">
-        {/* Corner Icons */}
-        <div className="absolute top-4 left-4">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Share className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="absolute bottom-4 left-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() =>
-              setSurveyState((prev) => ({ ...prev, showSurvey: true }))
-            }
-          >
-            <BarChart3 className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="absolute bottom-4 right-4">
-          <div
-            className={`flex items-center gap-1 ${getSuccessColor(
-              successPercentage
-            )}`}
-          >
-            <span className="text-sm font-semibold">{successPercentage}%</span>
-          </div>
-        </div>
-
         <h3 className="text-sm font-semibold text-foreground mb-4 text-center">
-          WSU AI Companion
+          AI Scheduling Assistant
         </h3>
         <div className="flex justify-center">
           <button
-            onClick={handleCougarClick}
+            onClick={handleFredClick}
             className="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-background/60 transition-all duration-300 group hover:scale-105 active:scale-95"
           >
             <div className="relative">
@@ -1022,10 +1070,10 @@ export default function ScheduleApp() {
             </div>
             <div className="text-center">
               <div className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                {WSU_COUGAR_AI.name}
+                {SCHEDULING_AI.name}
               </div>
               <div className="text-sm text-muted-foreground">
-                {WSU_COUGAR_AI.description}
+                {SCHEDULING_AI.description}
               </div>
             </div>
           </button>
@@ -1255,6 +1303,7 @@ export default function ScheduleApp() {
               e.preventDefault()
               e.stopPropagation()
               setEditingTask(null)
+              setTaskFormErrors([])
               setTaskForm({
                 name: '',
                 startTime: '',
