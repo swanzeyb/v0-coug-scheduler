@@ -68,12 +68,10 @@ export async function sendChatToWebhook(
   } catch (error) {
     console.error('Webhook error:', error)
 
-    // Fallback to random cougar response - return the original messages plus a fallback AI message
+    // Fallback to random lion response - return the original messages plus a fallback AI message
     const fallbackResponses = [
-      "Go Cougs! I'm having trouble connecting right now, but I'm still here to help!",
-      "That's the Cougar spirit! My connection is a bit spotty, but let's keep going!",
-      "Crimson and Gray pride! I'm experiencing some technical difficulties, but I believe in you!",
-      "Way to go, Coug! I'm having some connectivity issues, but your dedication is inspiring!",
+      "I'm having trouble connecting right now, but I'm still here to help!",
+      "That's the spirit! My connection is a bit spotty, but let's keep going!",
     ]
 
     const fallbackMessage: Message = {

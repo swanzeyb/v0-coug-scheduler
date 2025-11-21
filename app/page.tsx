@@ -123,12 +123,12 @@ const SURVEY_QUESTIONS = [
   },
 ]
 
-const WSU_COUGAR_AI = {
+const SCHEDULING_AI = {
   id: 1,
-  name: 'Butch the Cougar',
-  color: 'bg-red-700',
-  description: 'Your WSU study companion',
-  emoji: '🐾',
+  name: 'Fred the lion',
+  color: 'bg-orange-600',
+  description: 'Your friendly scheduling buddy',
+  emoji: '🦁',
 }
 
 export default function ScheduleApp() {
@@ -308,8 +308,8 @@ export default function ScheduleApp() {
     setCurrentDate(newDate)
   }
 
-  function handleCougarClick() {
-    // Start a new chat session each time the cougar is clicked
+  function handleFredClick() {
+    // Start a new chat session each time Fred is clicked
     setChatSessionKey((prev) => prev + 1)
     setCurrentView('chat')
   }
@@ -744,7 +744,7 @@ export default function ScheduleApp() {
                   Generating Your Schedule
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Analyzing your conversation with Butch...
+                  Analyzing your conversation with Fred...
                 </p>
               </div>
             </div>
@@ -772,10 +772,10 @@ export default function ScheduleApp() {
             </div>
             <div>
               <h1 className="font-semibold text-foreground">
-                {WSU_COUGAR_AI.name}
+                {SCHEDULING_AI.name}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {WSU_COUGAR_AI.description}
+                {SCHEDULING_AI.description}
               </p>
             </div>
           </div>
@@ -1049,11 +1049,11 @@ export default function ScheduleApp() {
     <div className="min-h-screen bg-background p-4 max-w-md mx-auto">
       <div className="bg-gradient-to-r from-muted/40 to-muted/20 rounded-3xl p-6 mb-6 border border-border/50 shadow-lg relative">
         <h3 className="text-sm font-semibold text-foreground mb-4 text-center">
-          WSU AI Companion
+          AI Scheduling Assistant
         </h3>
         <div className="flex justify-center">
           <button
-            onClick={handleCougarClick}
+            onClick={handleFredClick}
             className="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-background/60 transition-all duration-300 group hover:scale-105 active:scale-95"
           >
             <div className="relative">
@@ -1070,10 +1070,10 @@ export default function ScheduleApp() {
             </div>
             <div className="text-center">
               <div className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                {WSU_COUGAR_AI.name}
+                {SCHEDULING_AI.name}
               </div>
               <div className="text-sm text-muted-foreground">
-                {WSU_COUGAR_AI.description}
+                {SCHEDULING_AI.description}
               </div>
             </div>
           </button>

@@ -12,8 +12,8 @@ Needed:
 - ~~Remove feature buttons
 - ~~Survey button, starts at end
 - ~~Percent complete of the day
-- Says butch, its fred the lion bot
-- Go backwards on survey
+- ~~Says butch, its fred the lion bot
+- ~~Go backwards on survey
 - Screen 3
   - Is the current sleep schedule working?
   - Options:

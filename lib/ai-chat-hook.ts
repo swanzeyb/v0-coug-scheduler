@@ -12,12 +12,12 @@ export function useAIChat(
 
   // Generate a unique session ID that changes with sessionKey
   const [sessionId, setSessionId] = useState(
-    () => `butch-chat-session-${Date.now()}`
+    () => `fred-chat-session-${Date.now()}`
   )
 
   // When sessionKey changes, generate a new session ID
   useEffect(() => {
-    setSessionId(`butch-chat-session-${Date.now()}`)
+    setSessionId(`fred-chat-session-${Date.now()}`)
   }, [sessionKey])
 
   // Create the opening message based on user preferences and onboarding status
@@ -36,7 +36,7 @@ export function useAIChat(
 
     // Onboarding: detailed personal introduction
     let message =
-      "Hey! Thanks for taking the time to fill out that survey. I'm Butch, and I'm here to help you build a schedule that actually works for your life."
+      "Hey! Thanks for taking the time to fill out that survey. I'm Fred, and I'm here to help you build a schedule that actually works for your life."
 
     if (userPreferences) {
       // Personalize based on survey responses
@@ -62,11 +62,11 @@ export function useAIChat(
     return message
   }, [userPreferences, onboardingCompleted])
 
-  // Initial messages with Butch's greeting
+  // Initial messages with Fred's greeting
   const initialMessages = useMemo(
     () => [
       {
-        id: `butch-opening-${sessionKey}`,
+        id: `fred-opening-${sessionKey}`,
         role: 'assistant' as const,
         parts: [{ type: 'text' as const, text: openingMessage }],
       },
